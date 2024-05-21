@@ -95,6 +95,10 @@
               "target": "Package",
               "version": "[2.1.0, )"
             },
+            "MySql.Data": {
+              "target": "Package",
+              "version": "[8.4.0, )"
+            },
             "SSH.NET": {
               "target": "Package",
               "version": "[2024.0.0, )"

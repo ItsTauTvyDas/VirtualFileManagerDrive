@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("VirtualFileManagerDrive.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13c9af09ce5d38b2b3493521b1704f0c8fea065a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c6c4857baeba7c7953222e853da24ba47da4f8f2")]
 [assembly: System.Reflection.AssemblyProductAttribute("VirtualFileManagerDrive.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("VirtualFileManagerDrive.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
