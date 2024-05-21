@@ -2,10 +2,12 @@ using DokanNet;
 
 namespace VirtualFileManagerDrive.Core.Server;
 
-// ReSharper disable once InconsistentNaming
-public class MySQLServer : ServerInstance
+public class MySqlServer : ServerInstance
 {
-    
+    public MySqlServer()
+    {
+        
+    }
     
     public override bool TestConnection(out string errorReason)
     {
