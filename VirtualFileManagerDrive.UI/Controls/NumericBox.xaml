@@ -1,0 +1,53 @@
+<UserControl x:Class="UI.Controls.NumericBox"
+             HorizontalAlignment="Left"
+             HorizontalContentAlignment="Stretch"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:UI.Converters"
+             mc:Ignorable="d"
+             Loaded="NumericBox_OnLoaded"
+             d:DesignHeight="22" d:DesignWidth="300">
+    <UserControl.Resources>
+        <Style TargetType="{x:Type RepeatButton}">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="12"/>
+            <Setter Property="Padding" Value="0 -4.5 0 0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Panel.ZIndex" Value="1"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="True">
+                    <Setter Property="Panel.ZIndex" Value="2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid PreviewMouseWheel="Grid_OnPreviewMouseWheel">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="22"/>
+        </Grid.ColumnDefinitions>
+        <TextBox
+            Grid.Column="0"
+            x:Name="InputBox"
+            TextAlignment="{Binding TextAlignment, RelativeSource={RelativeSource AncestorType=UserControl}}"
+            GotFocus="Input_OnGotFocus"
+            LostFocus="Input_OnLostFocus"
+            BorderThickness="1 1 0 1"
+            Text="{Binding RenderedNumber, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+        <StackPanel Grid.Column="1">
+            <RepeatButton
+                x:Name="IncreaseButton"
+                Content="+"
+                Click="IncreaseButton_OnClick"/>
+            <RepeatButton
+                x:Name="DecreaseButton"
+                Content="-"
+                Margin="0 -1 0 0"
+                Click="DecreaseButton_OnClick"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
