@@ -1,8 +1,5 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using DokanNet;
-using VirtualDrive.Server;
 
 namespace VirtualDrive;
 
@@ -13,7 +10,7 @@ public abstract class ServerInstance : ICloneable
     public static readonly ObservableCollection<ServerInstance> SavedServers = [];
     public static readonly Dictionary<string, Type?> SupportedConnectionTypes = new()
     {
-        {"SSH (Secure Shell)", typeof(SecureShellBasedServer)},
+        {"SSH (Secure Shell)", null},
         {"SFTP (Secure File Transfer Protocol)", null},
         {"FTP (File Transfer Protocol)", null},
         {"MySQL Database", null},
@@ -41,8 +38,6 @@ public abstract class ServerInstance : ICloneable
     public bool MountOnProgramLoad = false;
     public bool MountButDontAutoConnect = false;
     public ulong? AutoDisconnectAfter = 200;
-
-    public bool IsSecureShellBased => this is SecureShellBasedServer;
     
     public VirtualServerDisk Virtual { get; private set; }
     protected ServerInstance() => Virtual = new VirtualServerDisk(this);

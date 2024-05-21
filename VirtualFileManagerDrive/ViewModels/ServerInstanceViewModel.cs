@@ -1,7 +1,5 @@
 using System.Runtime.CompilerServices;
-using System.Windows;
 using VirtualDrive;
-using VirtualDrive.Server;
 
 namespace VirtualFileManagerDrive.ViewModels;
 
@@ -52,10 +50,6 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         instance.AutoDisconnectAfter = (ulong?)_editedValues.GetValueOrDefault(nameof(AutoDisconnectAfter), instance.AutoDisconnectAfter);
         instance.FileInfoCaching = (bool)_editedValues.GetValueOrDefault(nameof(FileInfoCaching), instance.FileInfoCaching)!;
         instance.MountOnProgramLoad = (bool)_editedValues.GetValueOrDefault(nameof(MountOnProgramLoad), instance.MountOnProgramLoad)!;
-        if (instance is SecureShellBasedServer ssbs)
-        {
-            ssbs.OperatingSystem = (int)_editedValues.GetValueOrDefault(nameof(OperatingSystem), ssbs.OperatingSystem)!;
-        }
 
         _editedValues = null;
     }
@@ -153,8 +147,6 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
     }
     public string? Note => Instance.Note;
     
-    public bool IsSecureShellBased => Instance.IsSecureShellBased;
-    
     public bool FileInfoCaching
     {
         get => (bool)GetValue()!;
@@ -201,23 +193,4 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         get => (bool)GetValue()!;
         set => SetValue(value);
     }
-
-    public int OperatingSystem
-    {
-        get
-        {
-            if (Instance is SecureShellBasedServer)
-                return (int)GetValue()!;
-            return -1;
-        }
-        set
-        {
-            if (Instance is SecureShellBasedServer)
-                SetValue(value);
-        }
-    }
-
-    public string OperatingSystemString => Instance is SecureShellBasedServer s
-        ? SecureShellBasedServer.OperatingSystemTypes[s.OperatingSystem]
-        : "<Not SSH Based Connection>";
 }
