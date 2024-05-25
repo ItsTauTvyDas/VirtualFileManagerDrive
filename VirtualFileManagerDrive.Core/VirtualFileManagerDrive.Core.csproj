@@ -27,4 +27,8 @@
       <None Remove="obj\**" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\VirtualFileManagerDrive.Common\VirtualFileManagerDrive.Common.csproj" />
+    </ItemGroup>
+
 </Project>
