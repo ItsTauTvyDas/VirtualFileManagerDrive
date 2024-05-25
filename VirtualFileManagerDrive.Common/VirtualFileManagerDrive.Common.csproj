@@ -6,4 +6,25 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Content Include="bin\Debug\net8.0\VirtualFileManagerDrive.Common.deps.json" />
+      <Content Include="bin\Debug\net8.0\VirtualFileManagerDrive.Common.dll" />
+      <Content Include="bin\Debug\net8.0\VirtualFileManagerDrive.Common.pdb" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="bin\**" />
+      <Compile Remove="obj\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="bin\**" />
+      <EmbeddedResource Remove="obj\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="bin\**" />
+      <None Remove="obj\**" />
+    </ItemGroup>
+
 </Project>
