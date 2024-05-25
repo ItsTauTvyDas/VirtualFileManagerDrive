@@ -64,9 +64,9 @@ public class WindowsIcon : Image
                 control.Source = (BitmapSource?)Windows.GetIcon(control.File, (int)args.NewValue, control.Large,
                     control.Rotation);
             })
-);
+    );
 
-public static readonly DependencyProperty LargeProperty =
+    public static readonly DependencyProperty LargeProperty =
         DependencyProperty.Register(nameof(Large), typeof(bool), 
             typeof(WindowsIcon),
             new PropertyMetadata(default(bool))
