@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Mysqlx.Resultset;
 using UI.Extensions;
 using UI.ViewModels;
 using VirtualFileManagerDrive.Core;
@@ -59,8 +60,9 @@ public partial class AddServerWindow
         if (instance == null) return;
         SetValue(InstanceViewProperty, new ServerInstanceViewModel(instance));
         Console.WriteLine("New instance");
+        InstanceView.OnPropertyChanged("AdditionalData");
     }
-
+    
     private void TestConnectionButton_OnClick(object sender, RoutedEventArgs e)
     {
         var instance = Instance;
@@ -93,6 +95,7 @@ public partial class AddServerWindow
         if (IsEditMode)
         {
             InstanceView.ApplyEdits();
+            ServerInstance.EditMode = false;
             if (Instance != null) Instance.View = InstanceView;
             Close();
             return;
