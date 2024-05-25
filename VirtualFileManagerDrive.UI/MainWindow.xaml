@@ -70,14 +70,9 @@
                         </DockPanel>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Grid.Row="1" Header="SSH" Visibility="{Binding IsSecureShellBased, Converter={StaticResource VisibilityConverter}, Mode=OneWay}">
-                    <StackPanel>
-                        <DockPanel>
-                            <TextBlock>Operating System</TextBlock>
-                            <control:SelectableText Text="{Binding OperatingSystemString, Mode=OneWay}"/>
-                        </DockPanel>
-                    </StackPanel>
-                </GroupBox>
+                <control:AdditionalDataPanel ReadOnly="True"
+                                             Data="{Binding AdditionalData}"
+                                             Grid.Row="1"/>
                 <GroupBox Grid.Row="2" Header="Volume Information">
                     <StackPanel>
                         <DockPanel>
