@@ -1,11 +1,15 @@
 using System.Collections.ObjectModel;
+using System.Runtime.ExceptionServices;
 using DokanNet;
+using VirtualFileManagerDrive.Common;
+using VirtualFileManagerDrive.Core.Server;
 
 namespace VirtualFileManagerDrive.Core;
 
 public abstract class ServerInstance : ICloneable
 {
     public static int SelectedServer = -1;
+    public static bool EditMode = false;
     public static ServerInstance? SelectedServerObject => SelectedServer == -1 ? null : SavedServers[SelectedServer];
     public static readonly ObservableCollection<ServerInstance> SavedServers = [];
     public static readonly Dictionary<string, Type?> SupportedConnectionTypes = new()
@@ -13,9 +17,12 @@ public abstract class ServerInstance : ICloneable
         {"SSH (Secure Shell)", null},
         {"SFTP (Secure File Transfer Protocol)", null},
         {"FTP (File Transfer Protocol)", null},
-        {"MySQL Database", null},
+        {"MySQL Database", typeof(MySqlServer)},
         {"Microsoft SQL Server", null}
     };
+
+    public static EventHandler<FirstChanceExceptionEventArgs> ExceptionHandler = delegate {};
+    public static void HandleException(Exception ex) => ExceptionHandler(null, new FirstChanceExceptionEventArgs(ex));
 
     public static IEnumerable<char> AvailableVolumeLetters => Enumerable.Range('A', 'Z' - 'A' + 1).Select(i => (char)i)
         .Except(DriveInfo.GetDrives().Select(s => s.Name[..1][0]));
@@ -38,6 +45,11 @@ public abstract class ServerInstance : ICloneable
     public bool MountOnProgramLoad = false;
     public bool MountButDontAutoConnect = false;
     public ulong? AutoDisconnectAfter = 200;
+
+    public readonly List<AdditionalData> AdditionalData = [];
+
+    // public IEnumerable<string> AdditionalDataHeaders => AdditionalData.GroupBy(x => x.Header).Where(x => x.Count() == 1)
+    //     .Select(x => (string)x.Key.Header);
     
     public VirtualServerDisk Virtual { get; private set; }
     protected ServerInstance() => Virtual = new VirtualServerDisk(this);
