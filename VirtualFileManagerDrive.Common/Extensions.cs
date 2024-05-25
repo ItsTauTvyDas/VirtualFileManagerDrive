@@ -11,4 +11,9 @@ public static class Extensions
 
         return defaultValue;
     }
+
+    public static void Add<TK, TV>(this Dictionary<TK, TV?> dictionary, TK key, TV? value) where TK : notnull
+    {
+        dictionary.Add(key, value);
+    }
 }
