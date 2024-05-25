@@ -11,3 +11,6 @@ E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\obj\Debug\ne
 E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\obj\Debug\net8.0\refint\VirtualFileManagerDrive.Core.dll
 E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\obj\Debug\net8.0\VirtualFileManagerDrive.Core.pdb
 E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\obj\Debug\net8.0\ref\VirtualFileManagerDrive.Core.dll
+E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\bin\Debug\net8.0\VirtualFileManagerDrive.Common.dll
+E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\bin\Debug\net8.0\VirtualFileManagerDrive.Common.pdb
+E:\Projects\C#\VirtualFileManagerDrive\VirtualFileManagerDrive.Core\obj\Debug\net8.0\VirtualF.1B71675C.Up2Date

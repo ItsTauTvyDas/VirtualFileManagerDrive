@@ -78,7 +78,11 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "E:\\Projects\\C#\\VirtualFileManagerDrive\\VirtualFileManagerDrive.Common\\VirtualFileManagerDrive.Common.csproj": {
+                "projectPath": "E:\\Projects\\C#\\VirtualFileManagerDrive\\VirtualFileManagerDrive.Common\\VirtualFileManagerDrive.Common.csproj"
+              }
+            }
           }
         },
         "warningProperties": {

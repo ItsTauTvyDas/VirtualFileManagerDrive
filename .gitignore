@@ -4,8 +4,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-/obj/
-/bin/
+/VirtualFileManagerDrive.Code/bin/
+/VirtualFileManagerDrive.Code/obj/
+/VirtualFileManagerDrive.UI/bin/
+/VirtualFileManagerDrive.UI/obj/
+/VirtualFileManagerDrive.Common/bin/
+/VirtualFileManagerDrive.Common/obj/
+/VirtualFileManagerDrive.Core/bin/
 
 # User-specific files
 *.rsuser
