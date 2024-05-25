@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using VirtualFileManagerDrive.Common;
 using VirtualFileManagerDrive.Core;
 
 namespace UI.ViewModels;
@@ -37,7 +38,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         instance.AutoDisconnectAfter = (ulong?)_editedValues.GetValueOrDefault(nameof(AutoDisconnectAfter), instance.AutoDisconnectAfter);
         instance.FileInfoCaching = (bool)_editedValues.GetValueOrDefault(nameof(FileInfoCaching), instance.FileInfoCaching)!;
         instance.MountOnProgramLoad = (bool)_editedValues.GetValueOrDefault(nameof(MountOnProgramLoad), instance.MountOnProgramLoad)!;
-
+        
         _editedValues = null;
     }
 
@@ -54,7 +55,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
                 Instance.GetType().GetProperty(member)?.SetValue(Instance, value);
             field?.SetValue(Instance, value);
         }
-        OnPropertyChanged(member);
+        OnPropertyAutoChanged(member);
     }
 
     private object? GetValue([CallerMemberName] string member = "")
@@ -88,13 +89,14 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
 
     public void Update()
     {
-        OnPropertyChanged(nameof(IsConnected));
-        OnPropertyChanged(nameof(IsMounted));
-        OnPropertyChanged(nameof(Ping));
-        OnPropertyChanged(nameof(ConnectionIconIndex));
-        OnPropertyChanged(nameof(ConnectionToolTip));
+        OnPropertyAutoChanged(nameof(IsConnected));
+        OnPropertyAutoChanged(nameof(IsMounted));
+        OnPropertyAutoChanged(nameof(Ping));
+        OnPropertyAutoChanged(nameof(ConnectionIconIndex));
+        OnPropertyAutoChanged(nameof(ConnectionToolTip));
     }
-    
+
+    public List<AdditionalData> AdditionalData => Instance.AdditionalData;
     public string Address
     {
         get => (string)GetValue()!;
@@ -104,12 +106,6 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
     public string AddressAndPort => Address + ":" + Port;
     
     public string User
-    {
-        get => (string)GetValue()!;
-        set => SetValue(value);
-    }
-    
-    public string Password
     {
         get => (string)GetValue()!;
         set => SetValue(value);
@@ -154,7 +150,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
             SetValue(value);
             if (MountOnProgramLoad) return;
             SetValue(false, nameof(MountButDontAutoConnect));
-            OnPropertyChanged(nameof(MountButDontAutoConnect));
+            OnPropertyAutoChanged(nameof(MountButDontAutoConnect));
         }
     }
     
@@ -164,7 +160,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         set
         {
             SetValue(value);
-            OnPropertyChanged(nameof(AutoDisconnectAfterString));
+            OnPropertyAutoChanged(nameof(AutoDisconnectAfterString));
         }
     }
 
