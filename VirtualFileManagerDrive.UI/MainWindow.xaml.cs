@@ -76,10 +76,11 @@ public partial class MainWindow
             Owner = this,
             Title = "Edit Server"
         };
+        ServerInstance.EditMode = true;
         dialog.ShowDialog();
+        ServerInstance.EditMode = false;
         ServerList.Items.Refresh();
         // A workaround lol
-        
         var old = ServerList.SelectedIndex;
         ServerList.SelectedIndex = -1;
         ServerList.SelectedIndex = old;
