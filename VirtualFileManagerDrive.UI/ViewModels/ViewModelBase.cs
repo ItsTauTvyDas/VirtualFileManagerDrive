@@ -7,8 +7,10 @@ namespace UI.ViewModels;
 public class ViewModelBase : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
-    
-    protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+
+    public void OnPropertyAutoChanged([CallerMemberName] string propertyName = "") => OnPropertyChanged(propertyName);
+
+    public void OnPropertyChanged(string propertyName ) 
     {
         VerifyPropertyName(propertyName);
         var handler = PropertyChanged;
