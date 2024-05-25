@@ -6,7 +6,7 @@
         xmlns:viewModels="clr-namespace:UI.ViewModels"
         xmlns:virtualDrive="clr-namespace:VirtualFileManagerDrive.Core;assembly=VirtualFileManagerDrive.Core"
         xmlns:conv="clr-namespace:UI.Converters"
-        xmlns:controls="clr-namespace:UI.Controls"
+        xmlns:control="clr-namespace:UI.Controls"
         xmlns:extensions="clr-namespace:UI.Extensions"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:specialized="clr-namespace:System.Collections.Specialized;assembly=System.Collections.Specialized"
@@ -55,8 +55,9 @@
                 <GroupBox
                     Header="Note"
                     Visibility="{Binding Note, Converter={conv:ConditionalNullConverter NullValue=Collapsed, NotNullValue=Visible}}">
-                    <controls:SelectableText Text="{Binding Note, Mode=OneTime}"/>
+                    <control:SelectableText Text="{Binding Note, Mode=OneTime}"/>
                 </GroupBox>
+                <control:AdditionalDataPanel Data="{Binding AdditionalData}"/>
                 <GroupBox Header="Volume Configuration">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -108,7 +109,7 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock>Port</TextBlock>
-                                <controls:NumericBox
+                                <control:NumericBox
                                     Tag="Server Port"
                                     MinNumber="0"
                                     Width="80"
@@ -124,37 +125,41 @@
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel x:Name="UsernameField" Grid.Column="0" Margin="0 0 10 0">
+                            <StackPanel x:Name="UsernameField"
+                                        Grid.Column="0"
+                                        Grid.Row="0"
+                                        Margin="0 0 10 0">
                                 <TextBlock>Username</TextBlock>
                                 <TextBox Tag="Username" Text="{Binding User}"/>
                             </StackPanel>
-                            <StackPanel Grid.Column="1">
+                            <StackPanel Grid.Column="1" Grid.Row="0">
                                 <TextBlock>Password</TextBlock>
                                 <PasswordBox Tag="Password" x:Name="PasswordInput" PasswordChanged="PasswordInput_OnPasswordChanged" MaxLength="72"/>
                             </StackPanel>
+                            <StackPanel Grid.Column="0" Grid.Row="1">
+                                <TextBlock>Auto disconnect after</TextBlock>
+                                <control:NumericBox
+                                    Tag="Auto Disconnect After"
+                                    UseBoundedNumber="True"
+                                    MinNumber="-1"
+                                    MaxNumber="10000"
+                                    Width="{Binding ActualWidth, ElementName=UsernameField}"
+                                    NumberFormat="[0] sec."
+                                    NumberFormatForDisplay="[0] ([1])"
+                                    InternallyMinNumber="0"
+                                    DefaultValueWhenBelowInternallyMinNumber="{x:Null}"
+                                    BoundedNumber="{Binding AutoDisconnectAfter, TargetNullValue=''}">
+                                    <control:NumericBox.SpecialRenderedNumbersList>
+                                        <specialized:ListDictionary>
+                                            <system:String x:Key="-1">Never</system:String>
+                                            <system:String x:Key="0">Instant</system:String>
+                                        </specialized:ListDictionary>
+                                    </control:NumericBox.SpecialRenderedNumbersList>
+                                </control:NumericBox>
+                            </StackPanel>
                         </Grid>
-                        <StackPanel>
-                            <TextBlock>Auto disconnect after</TextBlock>
-                            <controls:NumericBox
-                                Tag="Auto Disconnect After"
-                                UseBoundedNumber="True"
-                                MinNumber="-1"
-                                MaxNumber="10000"
-                                Width="{Binding ActualWidth, ElementName=UsernameField}"
-                                NumberFormat="[0] sec."
-                                NumberFormatForDisplay="[0] ([1])"
-                                InternallyMinNumber="0"
-                                DefaultValueWhenBelowInternallyMinNumber="{x:Null}"
-                                BoundedNumber="{Binding AutoDisconnectAfter, TargetNullValue=''}">
-                                <controls:NumericBox.SpecialRenderedNumbersList>
-                                    <specialized:ListDictionary>
-                                        <system:String x:Key="-1">Never</system:String>
-                                        <system:String x:Key="0">Instant</system:String>
-                                    </specialized:ListDictionary>
-                                </controls:NumericBox.SpecialRenderedNumbersList>
-                            </controls:NumericBox>
-                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="Additional">
