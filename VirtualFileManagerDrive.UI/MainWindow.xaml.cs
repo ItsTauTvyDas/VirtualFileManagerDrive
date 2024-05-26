@@ -1,10 +1,14 @@
-﻿using System.Diagnostics;
+﻿using System.Data;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using UI.Controls;
 using UI.ViewModels;
 using VirtualFileManagerDrive.Common;
 using VirtualFileManagerDrive.Core;
@@ -67,23 +71,6 @@ public partial class MainWindow
         dialog.ShowDialog();
         ServerList.Focus();
         ServerList.SelectedIndex = ServerInstance.SelectedServer;
-    }
-    
-    private void EditServerButton_OnClick(object sender, RoutedEventArgs e)
-    {
-        var dialog = new AddServerWindow(true, ServerInstance.SelectedServerObject)
-        {
-            Owner = this,
-            Title = "Edit Server"
-        };
-        ServerInstance.EditMode = true;
-        dialog.ShowDialog();
-        ServerInstance.EditMode = false;
-        ServerList.Items.Refresh();
-        // A workaround lol
-        var old = ServerList.SelectedIndex;
-        ServerList.SelectedIndex = -1;
-        ServerList.SelectedIndex = old;
     }
     
     private void ServerList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -236,5 +223,144 @@ public partial class MainWindow
     {
         Mouse.SetCursor(Cursors.Hand);
         e.Handled = true;
+    }
+
+    private void EditServerButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new AddServerWindow(true, ServerInstance.SelectedServerObject)
+        {
+            Owner = this,
+            Title = "Edit Server"
+        };
+        ServerInstance.EditMode = true;
+        dialog.ShowDialog();
+        ServerInstance.EditMode = false;
+        ServerList.Items.Refresh();
+        // A workaround lol
+        var old = ServerList.SelectedIndex;
+        ServerList.SelectedIndex = -1;
+        ServerList.SelectedIndex = old;
+    }
+    
+    private void ExecuteButton_OnClick(object sender, RoutedEventArgs args)
+    {
+        var server = ServerInstance.SelectedServerObject;
+        if (server == null || !server.IsExecutable() || !server.IsConnected()) return;
+        // server.Execute("use products_orders_customers;select * from products", out var i, out var e);
+        // while (e.MoveNext())
+        // {
+        //     var j = 0;
+        //     while (j < i)
+        //     {
+        //         Console.Write(e.GetRecord()?.GetValue(j) + " | ");
+        //         j++;
+        //     }
+        //
+        //     Console.WriteLine();
+        // }
+    }
+
+    private void ConnectButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var server = ServerInstance.SelectedServerObject;
+        if (server == null) return;
+        if (server.IsConnected()) server.Disconnect();
+        else server.Connect();
+        UpdateSelectedServerView();
+    }
+
+    private void MountButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        var server = ServerInstance.SelectedServerObject;
+        if (server == null) return;
+    }
+
+    private void TerminalTextBox_OnKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        var box = (TextBox)sender;
+        var server = ServerInstance.SelectedServerObject;
+        if (server == null) return;
+        var view = (ServerInstanceViewModel)server.View!;
+        var command = box.Text;
+        box.Text = "";
+        view.TerminalLogs.Add("> " + command);
+        if (!server.Execute(command,
+                out var fieldCount,
+                out var affected,
+                out var en,
+                out var closeAction)) return;
+        if (affected > 0)
+            view.TerminalLogs.Add($"{affected} row(s) affected.");
+        if (en == null) return;
+        var reader = new FlowDocumentReader
+        {
+            Document = new FlowDocument(),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Left,
+            UseLayoutRounding = true,
+            SnapsToDevicePixels = true,
+            ViewingMode = FlowDocumentReaderViewingMode.Scroll,
+            Zoom = 1
+        };
+        var table = new Table
+        {
+            CellSpacing = 0,
+            RowGroups =
+            {
+                new TableRowGroup()
+            }
+        };
+        for (var i = 0; i < fieldCount; i++)
+            table.Columns.Add(new TableColumn());
+        reader.Document.Blocks.Add(table);
+        try
+        {
+            while (en.MoveNext())
+            {
+                var row = new TableRow();
+                var j = 0;
+                while (j < fieldCount)
+                {
+                    var cell = new TableCell
+                    {
+                        BorderBrush = Brushes.Black,
+                        BorderThickness = new Thickness(1),
+                        Padding = new Thickness(1)
+                    };
+                    cell.Blocks.Add(new Paragraph
+                    {
+                        Inlines =
+                        {
+                            new SelectableText
+                            {
+                                Text = en.GetRecord()?.GetValue(j).ToString() ?? "<null>",
+                                TextWrapping = TextWrapping.NoWrap,
+                                TextAlignment = TextAlignment.Center
+                            }
+                        }
+                    });
+                    j++;
+                    row.Cells.Add(cell);
+                }
+
+                table.RowGroups[0].Rows.Add(row);
+            }
+            view.TerminalLogs.Add(new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = GridLength.Auto },
+                    new ColumnDefinition { Width = new GridLength(0, GridUnitType.Star) }
+                },
+                Children = { reader }
+            });
+            closeAction?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            closeAction?.Invoke();
+            ServerInstance.HandleException(ex);
+        }
     }
 }
