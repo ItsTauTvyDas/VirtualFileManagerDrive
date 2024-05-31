@@ -5,9 +5,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace UI;
+namespace UI.Helper;
 
-public static class Windows
+public static class WindowsApi
 {
     public static int Count(string file) => ExtractIconEx(file, -1, out _, out _, 0);
     
@@ -40,4 +40,11 @@ public static class Windows
     
     [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
     private static extern int SHLoadIndirectString(string pszSource, StringBuilder pszOutBuf, int cchOutBuf, IntPtr ppvReserved);
+    
+    public const int GWL_STYLE = -16;
+    public const int WS_SYSMENU = 0x80000;
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll")]
+    public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 }
