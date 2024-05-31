@@ -4,13 +4,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:viewModels="clr-namespace:UI.ViewModels"
-        xmlns:virtualDrive="clr-namespace:VirtualFileManagerDrive.Core;assembly=VirtualFileManagerDrive.Core"
         xmlns:conv="clr-namespace:UI.Converters"
         xmlns:control="clr-namespace:UI.Controls"
-        xmlns:extensions="clr-namespace:UI.Extensions"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
         xmlns:specialized="clr-namespace:System.Collections.Specialized;assembly=System.Collections.Specialized"
-        Icon="{Binding Converter={conv:WindowsIconConverter Index=199, ConvertToImage=False}}"
+        xmlns:core="clr-namespace:VirtualFileManagerDrive.Core;assembly=Core"
+        Icon="{Binding Converter={conv:WindowsIconConverter Icon=Drive35, ConvertToImage=False}}"
         mc:Ignorable="d"
         Width="350"
         MouseDown="Window_OnMouseDown"
@@ -47,10 +46,8 @@
                     <TextBlock>Server Name</TextBlock>
                     <TextBox
                         Loaded="ServerNameInput_OnLoaded"
-                        extensions:DependencyExtension.IsRequired="True"
-                        extensions:DependencyExtension.MinTextLength="5"
-                        Tag="Server Name"
-                        Text="{Binding ServerName}"/>
+                        Text="{Binding ServerName, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"
+                        x:Name="ServerNameField"/>
                 </StackPanel>
                 <GroupBox
                     Header="Note"
@@ -58,7 +55,7 @@
                     <control:SelectableText Text="{Binding Note, Mode=OneTime}"/>
                 </GroupBox>
                 <control:AdditionalDataPanel Data="{Binding AdditionalData}"/>
-                <GroupBox Header="Volume Configuration">
+                <GroupBox Header="Drive Configuration">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -70,22 +67,28 @@
                         <StackPanel Grid.Column="0" Margin="0 0 10 0">
                             <TextBlock>Name</TextBlock>
                             <TextBox
-                                Tag="Volume Name"
-                                extensions:DependencyExtension.IsRequired="True"
-                                MaxLength="32"
-                                Text="{Binding VolumeName}"/>
+                                Text="{Binding DriveName, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"
+                                MaxLength="32"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <TextBlock>Letter</TextBlock>
                             <ComboBox
                                 x:Name="SelectVolumeLetter"
-                                Tag="Volume Letter"
-                                ItemsSource="{x:Static virtualDrive:ServerInstance.AvailableVolumeLetters}"
-                                SelectedItem="{Binding VolumeLetter, Mode=TwoWay}">
+                                SelectedItem="{Binding DriveLetter}"
+                                ItemsSource="{x:Static core:ServerInstance.AvailableDriveLetters}">
+                                <ComboBox.Resources>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Style.Triggers>
+                                            <Trigger Property="SelectedItem" Value="{x:Null}">
+                                                <Setter Property="SelectedIndex" Value="0"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Resources>
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate>
                                         <DockPanel>
-                                            <TextBlock Text="{Binding}"/><TextBlock Text=":/"/>
+                                            <TextBlock Text="{Binding StringFormat={}{0}:/}"/>
                                         </DockPanel>
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
@@ -105,7 +108,7 @@
                             </Grid.RowDefinitions>
                             <StackPanel Grid.Column="0" Margin="0 0 10 0">
                                 <TextBlock>Server Address</TextBlock>
-                                <TextBox Tag="Server Address" Text="{Binding Address}"/>
+                                <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1">
                                 <TextBlock>Port</TextBlock>
@@ -127,25 +130,25 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel x:Name="UsernameField"
+                            <StackPanel x:Name="UsernameFieldPanel"
                                         Grid.Column="0"
                                         Grid.Row="0"
                                         Margin="0 0 10 0">
                                 <TextBlock>Username</TextBlock>
-                                <TextBox Tag="Username" Text="{Binding User}"/>
+                                <TextBox x:Name="UsernameField"
+                                         Text="{Binding User, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Grid.Row="0">
                                 <TextBlock>Password</TextBlock>
-                                <PasswordBox Tag="Password" x:Name="PasswordInput" PasswordChanged="PasswordInput_OnPasswordChanged" MaxLength="72"/>
+                                <PasswordBox x:Name="PasswordInput" PasswordChanged="PasswordInput_OnPasswordChanged" MaxLength="72"/>
                             </StackPanel>
                             <StackPanel Grid.Column="0" Grid.Row="1">
                                 <TextBlock>Auto disconnect after</TextBlock>
                                 <control:NumericBox
-                                    Tag="Auto Disconnect After"
                                     UseBoundedNumber="True"
                                     MinNumber="-1"
                                     MaxNumber="10000"
-                                    Width="{Binding ActualWidth, ElementName=UsernameField}"
+                                    Width="{Binding ActualWidth, ElementName=UsernameFieldPanel}"
                                     NumberFormat="[0] sec."
                                     NumberFormatForDisplay="[0] ([1])"
                                     InternallyMinNumber="0"
@@ -166,26 +169,44 @@
                     <StackPanel>
                         <CheckBox IsChecked="{Binding ReadOnly}"
                                   Content="Read-Only volume"/>
-                        <CheckBox IsChecked="{Binding FileInfoCaching}"
-                                  Content="Cache file information"/>
                         <CheckBox IsChecked="{Binding MountOnProgramLoad}"
                                   Content="Auto mount on program load"/>
                         <CheckBox IsChecked="{Binding MountButDontAutoConnect}"
                                   Style="{StaticResource AdditionalCheckChildStyle}"
                                   IsEnabled="{Binding MountOnProgramLoad}"
-                                  Content="Don't auto connect to the server"/>
+                                  Content="Auto connect to the server"/>
+                        <CheckBox IsChecked="{Binding MountOnProgramLoad}"
+                                  Content="Auto-reconnect if file/folder is requested"/>
+                        <CheckBox IsChecked="{Binding MountOnProgramLoad}"
+                                  Content="Unmount if disconnected"/>
+                        <CheckBox IsChecked="{Binding FileInfoCaching}"
+                                  Content="Cache file information"/>
                     </StackPanel>
                 </GroupBox>
+                <!-- <StackPanel Visibility="Collapsed" x:Name="ErrorListPanel"> -->
+                <!--     <StackPanel.Resources> -->
+                <!--         <Style TargetType="{x:Type TextBlock}"> -->
+                <!--             <Setter Property="Foreground" Value="Red"/> -->
+                <!--         </Style> -->
+                <!--     </StackPanel.Resources> -->
+                <!--     <TextBlock Visibility="{Binding (Validation.HasError), ElementName=ServerNameField, Converter={StaticResource VisibilityConverter}}" -->
+                <!--                Text="{Binding (Validation.Errors)[0].ErrorContent, ElementName=ServerNameField}"/> -->
+                <!--     <TextBlock Visibility="{Binding (Validation.HasError), ElementName=UsernameField, Converter={StaticResource VisibilityConverter}}" -->
+                <!--                Text="{Binding (Validation.Errors)[0].ErrorContent, ElementName=UsernameField}"/> -->
+                <!--     <TextBlock Visibility="{Binding (Validation.HasError), ElementName=VolumeName, Converter={StaticResource VisibilityConverter}}" -->
+                <!--                Text="{Binding (Validation.Errors)[0].ErrorContent, ElementName=VolumeName}"/> -->
+                <!-- </StackPanel> -->
             </StackPanel>
         </DataTemplate>
     </Window.Resources>
     <StackPanel Margin="5">
-        <StackPanel x:Name="ServerDataInput">
+        <StackPanel>
             <TextBlock>Server Type</TextBlock>
             <ComboBox SelectedIndex="0" x:Name="SelectServerType" Style="{StaticResource SelectServerStyle}"
                       SelectionChanged="SelectServerType_OnSelected" Margin="0 0 0 5"/>
             <ContentControl Content="{Binding InstanceView, ElementName=CurrentWindow}"
-                            ContentTemplate="{StaticResource EditDetailsTemplate}"/>
+                            ContentTemplate="{StaticResource EditDetailsTemplate}"
+                            x:Name="ServerDataInput"/>
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>

@@ -1,8 +1,9 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
-using Mysqlx.Resultset;
+using System.Windows.Media;
 using UI.Extensions;
 using UI.ViewModels;
 using VirtualFileManagerDrive.Core;
@@ -62,9 +63,25 @@ public partial class AddServerWindow
         Console.WriteLine("New instance");
         InstanceView.OnPropertyChanged("AdditionalData");
     }
+
+    private bool IsValid(DependencyObject parent)
+    {
+        foreach (var obj in parent.GetAllChildren())
+        {
+            if (!Validation.GetHasError(obj)) continue;
+            var error = Validation.GetErrors(obj)[0];
+            MessageBox.Show(this, error.ErrorContent.ToString(), "Validation Error!", MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            ((IInputElement)obj).Focus();
+            return false;
+        }
+        return true;
+    }
     
     private void TestConnectionButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (!IsValid(ServerDataInput))
+            return;
         var instance = Instance;
         if (instance == null)
         {
@@ -76,22 +93,21 @@ public partial class AddServerWindow
                 );
             return;
         }
-
-        var success = instance.TestConnection(out var errorReason);
-        MessageBox.Show(
-            success ? "Connected successfully!" : $"Connection failed: {errorReason}",
-            success ? "Success" : "Error occured",
-            MessageBoxButton.OK,
-            success ? MessageBoxImage.Information : MessageBoxImage.Error
-        );
+        
+        instance.TestConnection(out var errorReason);
+        if (errorReason == null)
+            MessageBox.Show(
+                "Connected successfully!",
+                "Success",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
     }
-
-    private DependencyObject? _oldFaultyObject;
+    
     private void AddServerButton_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!DependencyExtension.CheckRequiredElements(this, ServerDataInput, out _oldFaultyObject, _oldFaultyObject,
-                "Failed to add new server!")) return;
-        _oldFaultyObject = null;
+        if (!IsValid(ServerDataInput))
+            return;
         if (IsEditMode)
         {
             InstanceView.ApplyEdits();
@@ -102,6 +118,24 @@ public partial class AddServerWindow
         }
         if (Instance == null) return;
         Instance.View = InstanceView;
+        InstanceView.Logs.CollectionChanged += (_, _) => Dispatcher.Invoke(() => InstanceView.OnPropertyChanged(nameof(InstanceView.Logs)));
+        InstanceView.TerminalLogs.CollectionChanged +=
+            (_, _) => InstanceView.OnPropertyChanged(nameof(InstanceView.TerminalLogs));
+        Instance.DriveMountHandler += (_, _) =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                InstanceView.Update();
+                InstanceView.Logs.Add(new Exception("Drive mounted"));
+            });
+        };
+        Instance.DriveUnmountHandler += (_, result) =>
+        {
+            Dispatcher.Invoke(() => {
+                InstanceView.Update();
+                Instance.Logs.Add(new Exception($"Drive unmounted ({result})"));
+            });
+        };
         ServerInstance.SavedServers.Add(Instance);
         ServerInstance.SelectedServer = ServerInstance.SavedServers.Count - 1;
         Close();
