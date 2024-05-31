@@ -1,4 +1,6 @@
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Media;
 using VirtualFileManagerDrive.Common;
 using VirtualFileManagerDrive.Core;
 
@@ -30,11 +32,11 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         instance.MountButDontAutoConnect = (bool)_editedValues.GetValueOrDefault(nameof(MountButDontAutoConnect), instance.MountButDontAutoConnect)!;
         instance.Address = (string)_editedValues.GetValueOrDefault(nameof(Address), instance.Address)!;
         instance.ServerName = (string)_editedValues.GetValueOrDefault(nameof(ServerName), instance.ServerName)!;
-        instance.VolumeName = (string)_editedValues.GetValueOrDefault(nameof(VolumeName), instance.VolumeName)!;
+        instance.DriveName = (string)_editedValues.GetValueOrDefault(nameof(DriveName), instance.DriveName)!;
         instance.Port = (int)_editedValues.GetValueOrDefault(nameof(Port), instance.Port)!;
         instance.User = (string)_editedValues.GetValueOrDefault(nameof(User), instance.User)!;
         instance.ReadOnly = (bool)_editedValues.GetValueOrDefault(nameof(ReadOnly), instance.ReadOnly)!;
-        instance.VolumeLetter = (char)_editedValues.GetValueOrDefault(nameof(VolumeLetter), instance.VolumeLetter)!;
+        instance.DriveLetter = (char)_editedValues.GetValueOrDefault(nameof(DriveLetter), instance.DriveLetter)!;
         instance.AutoDisconnectAfter = (ulong?)_editedValues.GetValueOrDefault(nameof(AutoDisconnectAfter), instance.AutoDisconnectAfter);
         instance.FileInfoCaching = (bool)_editedValues.GetValueOrDefault(nameof(FileInfoCaching), instance.FileInfoCaching)!;
         instance.MountOnProgramLoad = (bool)_editedValues.GetValueOrDefault(nameof(MountOnProgramLoad), instance.MountOnProgramLoad)!;
@@ -42,7 +44,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         _editedValues = null;
     }
 
-    private void SetValue(object? value, [CallerMemberName] string member = "")
+    private void SetValue(object? value, string member)
     {
         if (_editedValues != null)
         {
@@ -58,6 +60,8 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         OnPropertyAutoChanged(member);
     }
 
+    private void SetAutoValue(object? value, [CallerMemberName] string member = "") => SetValue(value, member);
+
     private object? GetValue([CallerMemberName] string member = "")
     {
         if (_editedValues != null)
@@ -68,39 +72,65 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         var field = Instance.GetType().GetField(member);
         return field == null ? Instance.GetType().GetProperty(member)?.GetValue(Instance) : field.GetValue(Instance);
     }
+
+    public void NotifyPing()
+    {
+        OnPropertyChanged(nameof(Ping));
+    }
     
+    public void Update()
+    {
+        OnPropertyChanged(nameof(IsConnected));
+        OnPropertyChanged(nameof(IsMounted));
+        OnPropertyChanged(nameof(CanExecute));
+        OnPropertyChanged(nameof(Ping));
+        OnPropertyChanged(nameof(ConnectionIconIndex));
+        OnPropertyChanged(nameof(ConnectionToolTip));
+        OnPropertyChanged(nameof(ConnectionStatus));
+    }
+
+    private void VerifyNotEmptyAndSetValue(string value, string name, [CallerMemberName] string member = "")
+    {
+        if (value == "" || string.IsNullOrWhiteSpace(value))
+            throw new ArgumentException($"{name} cannot be empty!");
+        SetValue(value, member);
+    }
+
+    public ObservableCollection<Exception> Logs => Instance.Logs;
+    public ObservableCollection<object> TerminalLogs => Instance.TerminalLogs;
+    public List<AdditionalData> AdditionalData => Instance.AdditionalData;
+
     public string ServerName
     {
         get => (string)GetValue()!;
-        set => SetValue(value);
+        set => VerifyNotEmptyAndSetValue(value, "Server Name");
     }
 
+    public string ConnectionStatus => IsConnected ? "Connected" : "Disconnected";
+    public Brush ConnectionStatusColor => IsConnected ? Brushes.ForestGreen : Brushes.IndianRed;
+
+    public bool IsExecutable => Instance.IsExecutable();
+
+    public bool CanExecute => Instance.IsExecutable() && Instance.IsConnected();
+    
     public bool IsConnected => Instance.IsConnected();
     
     public bool IsMounted => Instance.IsMounted();
 
-    public uint Ping => Instance.Ping;
+    public WindowsApi.ShellIcon Icon => Instance.Icon;
+
+    public long Ping => Instance.Ping;
 
     public int ConnectionIconIndex => IsConnected
         ? (int)ApplicationSettings.GetConnectionStrengthIconIndex(Ping)
         : (int)ApplicationSettings.ConnectionStrength.None;
 
     public string ConnectionToolTip => IsConnected ? $"Ping: {Ping}" : "Not Connected!";
-
-    public void Update()
-    {
-        OnPropertyAutoChanged(nameof(IsConnected));
-        OnPropertyAutoChanged(nameof(IsMounted));
-        OnPropertyAutoChanged(nameof(Ping));
-        OnPropertyAutoChanged(nameof(ConnectionIconIndex));
-        OnPropertyAutoChanged(nameof(ConnectionToolTip));
-    }
-
-    public List<AdditionalData> AdditionalData => Instance.AdditionalData;
+    
     public string Address
     {
         get => (string)GetValue()!;
-        set => SetValue(value);
+        set => VerifyNotEmptyAndSetValue(value, "Server Address");
     }
 
     public string AddressAndPort => Address + ":" + Port;
@@ -108,38 +138,38 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
     public string User
     {
         get => (string)GetValue()!;
-        set => SetValue(value);
+        set => VerifyNotEmptyAndSetValue(value, "Username");
     }
     
     public int Port
     {
         get => (int)GetValue()!;
-        set => SetValue(value);
+        set => SetAutoValue(value);
     }
     
-    public string VolumeName
+    public string DriveName
     {
         get => (string)GetValue()!;
-        set => SetValue(value);
+        set => VerifyNotEmptyAndSetValue(value, "Volume Name");
     }
     
-    public char VolumeLetter
+    public char DriveLetter
     {
         get => (char)GetValue()!;
-        set => SetValue(value);
+        set => SetAutoValue(value);
     }
     public string? Note => Instance.Note;
     
     public bool FileInfoCaching
     {
         get => (bool)GetValue()!;
-        set => SetValue(value);
+        set => SetAutoValue(value);
     }
     
     public bool ReadOnly
     {
         get => (bool)GetValue()!;
-        set => SetValue(value);
+        set => SetAutoValue(value);
     }
     
     public bool MountOnProgramLoad
@@ -147,9 +177,9 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         get => (bool)GetValue()!;
         set
         {
-            SetValue(value);
+            SetAutoValue(value);
             if (MountOnProgramLoad) return;
-            SetValue(false, nameof(MountButDontAutoConnect));
+            SetAutoValue(false, nameof(MountButDontAutoConnect));
             OnPropertyAutoChanged(nameof(MountButDontAutoConnect));
         }
     }
@@ -159,7 +189,7 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
         get => (ulong?)GetValue();
         set
         {
-            SetValue(value);
+            SetAutoValue(value);
             OnPropertyAutoChanged(nameof(AutoDisconnectAfterString));
         }
     }
@@ -174,6 +204,6 @@ public class ServerInstanceViewModel(ServerInstance instance) : ViewModelBase
     public bool MountButDontAutoConnect
     {
         get => (bool)GetValue()!;
-        set => SetValue(value);
+        set => SetAutoValue(value);
     }
 }
