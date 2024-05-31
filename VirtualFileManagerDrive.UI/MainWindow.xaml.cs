@@ -1,15 +1,15 @@
-﻿using System.Data;
+﻿using System.Collections.Specialized;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Metadata;
+using System.Media;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using UI.Controls;
-using UI.ViewModels;
+using UI.Extensions;
 using VirtualFileManagerDrive.Common;
 using VirtualFileManagerDrive.Core;
 
@@ -17,18 +17,39 @@ namespace UI;
 
 public partial class MainWindow
 {
+    private CustomMessageBox? _messageBox;
+    
     public MainWindow()
     {
         InitializeComponent();
-        ServerInstance.SavedServers.CollectionChanged += (_, _) =>
+        ServerInstance.ShowStatusDialogHandler += (_, str) =>
+            Dispatcher.Invoke(() => 
+                (_messageBox = new CustomMessageBox
+                {
+                    Owner = this,
+                    Text = str
+                }).Show());
+        ServerInstance.CloseStatusDialogHandler += (_, _) => Dispatcher.Invoke(() => _messageBox?.Close());
+        ServerInstance.SavedServers.CollectionChanged += (_, args) =>
         {
             UnselectSelectedServer();
             ServerList.Items.Refresh();
+            if (args.Action != NotifyCollectionChangedAction.Add) return;
+            var server = (ServerInstance)args.NewItems![0]!;
+            server.NewPingHandler += (_, _) => Dispatcher.Invoke(() => server.GetView().NotifyPing());
+            server.DriveMountHandler += (_, _) => Dispatcher.Invoke(() =>  server.UpdateView());
+            server.NewLogReceivedHandler += (_, log) => Dispatcher.Invoke(() =>
+            {
+                if (log is Exception ex)
+                    server.Logs.Add(ex);
+                else
+                    server.Logs.Add(new Exception(log.ToString()));
+            });
         };
         ServerList.ItemsSource = ServerInstance.SavedServers;
     }
 
-    public void UnselectSelectedServer()
+    private void UnselectSelectedServer()
     {
         ServerInstance.SelectedServer = -1;
         ServerList.UnselectAll();
@@ -57,7 +78,7 @@ public partial class MainWindow
 
     private void UpdateSelectedServerView()
     {
-        ((ServerInstanceViewModel?)ServerInstance.SelectedServerObject?.View)?.Update();
+        ServerInstance.SelectedServerObject!.UpdateView();
         ServerList.Items.Refresh();
     }
 
@@ -101,6 +122,11 @@ public partial class MainWindow
             case MessageBoxResult.Yes:
                 
                 break;
+            case MessageBoxResult.None:
+            case MessageBoxResult.OK:
+            case MessageBoxResult.Cancel:
+            default:
+                break;
         }
     }
 
@@ -127,17 +153,16 @@ public partial class MainWindow
         switch (header)
         {
             case "Mount":
-                server.SetMounted(!server.IsMounted());
+                MountButton_OnClick();
                 break;
             case "Connect":
-                if (server.IsConnected())
-                    server.Disconnect();
-                else
-                    server.Connect();
-                UpdateSelectedServerView();
+                ConnectButton_OnClick();
                 break;
             case "Open Folder":
-                
+                Process.Start(new ProcessStartInfo($"{server.DriveLetter}:\\")
+                {
+                    UseShellExecute = true
+                });
                 break;
             case "Open Terminal":
                 break;
@@ -225,7 +250,7 @@ public partial class MainWindow
         e.Handled = true;
     }
 
-    private void EditServerButton_OnClick(object sender, RoutedEventArgs e)
+    private void EditServerButton_OnClick(object? sender = null, RoutedEventArgs? e = null)
     {
         var dialog = new AddServerWindow(true, ServerInstance.SelectedServerObject)
         {
@@ -236,7 +261,7 @@ public partial class MainWindow
         dialog.ShowDialog();
         ServerInstance.EditMode = false;
         ServerList.Items.Refresh();
-        // A workaround lol
+        // A workaround lol, refreshes all the variables from server view
         var old = ServerList.SelectedIndex;
         ServerList.SelectedIndex = -1;
         ServerList.SelectedIndex = old;
@@ -246,33 +271,80 @@ public partial class MainWindow
     {
         var server = ServerInstance.SelectedServerObject;
         if (server == null || !server.IsExecutable() || !server.IsConnected()) return;
-        // server.Execute("use products_orders_customers;select * from products", out var i, out var e);
-        // while (e.MoveNext())
-        // {
-        //     var j = 0;
-        //     while (j < i)
-        //     {
-        //         Console.Write(e.GetRecord()?.GetValue(j) + " | ");
-        //         j++;
-        //     }
-        //
-        //     Console.WriteLine();
-        // }
     }
 
-    private void ConnectButton_OnClick(object sender, RoutedEventArgs e)
+    private void ConnectButton_OnClick(object? sender = null, RoutedEventArgs? e = null)
     {
         var server = ServerInstance.SelectedServerObject;
         if (server == null) return;
-        if (server.IsConnected()) server.Disconnect();
-        else server.Connect();
+        if (server.IsConnected())
+        {
+            SystemSounds.Hand.Play();
+            server.Disconnect();
+        }
+        else
+        {
+            server.ShowDialogForNextStatus();
+            server.Connect();
+        }
         UpdateSelectedServerView();
     }
 
-    private void MountButton_OnClick(object sender, RoutedEventArgs e)
+    private void MountButton_OnClick(object? sender = null, RoutedEventArgs? e = null)
     {
         var server = ServerInstance.SelectedServerObject;
         if (server == null) return;
+        server.ShowDialogForNextStatus();
+        server.SetMounted(true);
+    }
+
+    private void CreateSqlTableColumn(DbDataReader reader, int i, int j, Grid grid, GroupBox groupBox,
+        TextBlock rowCountTextBlock, bool isData = true)
+    {
+        var columnSchema = isData ? null : reader.GetColumnSchema()[j];
+        var value = isData ? reader.GetValue(j).ToString() : columnSchema!.ColumnName;
+        var type = isData ? reader.GetFieldType(j).Name : columnSchema!.DataType?.Name ?? "<unknown>";
+        object ns = "<Not Set>";
+        var tooltip = isData
+            ? $"Length: {value?.Length ?? 0}\n" +
+              $"Is Null: {value == null}\n" +
+              $"Type: {type}\n" +
+              $"Row: {i + 1}, Column: {j + 1}"
+            : $"Name: {value}\n" +
+              $"Type: {type}\n" +
+              $"Size: {columnSchema!.ColumnSize ?? ns}\n" +
+              $"Table Name: {columnSchema.BaseTableName ?? ns}\n" +
+              $"Is Identity: {columnSchema.IsIdentity ?? ns}\n" +
+              $"Is Key: {columnSchema.IsKey ?? ns}\n" +
+              $"Is Auto-Increment: {columnSchema.IsAutoIncrement ?? ns}\n" +
+              $"Is Aliased: {columnSchema.IsAliased ?? ns}\n" +
+              $"Is Expression: {columnSchema.IsExpression ?? ns}\n" +
+              $"Is Hidden: {columnSchema.IsHidden ?? ns}\n" +
+              $"Is Unique: {columnSchema.IsUnique ?? ns}\n" +
+              $"Is Read-Only: {columnSchema.IsReadOnly ?? ns}";
+        Dispatcher.Invoke(() =>
+        {
+            if (i == 0)
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            if (j == 0)
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var cell = new SelectableText
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                BorderBrush = groupBox.BorderBrush,
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(2),
+                Text = value ?? "<null>",
+                FontWeight = isData ? FontWeights.Normal : FontWeights.Bold,
+                ToolTip = tooltip,
+                TextWrapping = TextWrapping.NoWrap
+            };
+            cell.SetValue(Grid.RowProperty, isData ? i + 1 : i);
+            cell.SetValue(Grid.ColumnProperty, j);
+            grid.Children.Add(cell);
+            if (j == 0)
+                rowCountTextBlock.Text = $"Showing {i + 1} row(s).";
+        });
     }
 
     private void TerminalTextBox_OnKeyDown(object sender, KeyEventArgs e)
@@ -281,86 +353,79 @@ public partial class MainWindow
         var box = (TextBox)sender;
         var server = ServerInstance.SelectedServerObject;
         if (server == null) return;
-        var view = (ServerInstanceViewModel)server.View!;
+        if (server.Busy && box.Text != "stop") return;
+        if (box.Text == "stop")
+        {
+            server.TryToCancelExecutingTask();
+            box.Text = "";
+            return;
+        }
+        var view = server.GetView();
         var command = box.Text;
         box.Text = "";
         view.TerminalLogs.Add("> " + command);
-        if (!server.Execute(command,
-                out var fieldCount,
-                out var affected,
-                out var en,
-                out var closeAction)) return;
-        if (affected > 0)
-            view.TerminalLogs.Add($"{affected} row(s) affected.");
-        if (en == null) return;
-        var reader = new FlowDocumentReader
+        var grid = new Grid
         {
-            Document = new FlowDocument(),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            HorizontalContentAlignment = HorizontalAlignment.Left,
-            UseLayoutRounding = true,
-            SnapsToDevicePixels = true,
-            ViewingMode = FlowDocumentReaderViewingMode.Scroll,
-            Zoom = 1
-        };
-        var table = new Table
-        {
-            CellSpacing = 0,
-            RowGroups =
+            RowDefinitions =
             {
-                new TableRowGroup()
+                new RowDefinition { Height = GridLength.Auto }
             }
         };
-        for (var i = 0; i < fieldCount; i++)
-            table.Columns.Add(new TableColumn());
-        reader.Document.Blocks.Add(table);
-        try
+        var groupBox = new GroupBox
         {
-            while (en.MoveNext())
+            Header = "Table",
+            Content = grid,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        var rowCountTextBlock = new TextBlock();
+        server.Execute(command, response =>
+        {
+            switch (response)
             {
-                var row = new TableRow();
-                var j = 0;
-                while (j < fieldCount)
+                case string str:
+                    Dispatcher.Invoke(() => view.TerminalLogs.Add(str));
+                    break;
+                case DbDataReader reader:
                 {
-                    var cell = new TableCell
+                    if (reader.RecordsAffected != -1)
+                        Dispatcher.Invoke(() => view.TerminalLogs.Add($"{reader.RecordsAffected} row(s) affected."));
+                    if (reader.IsClosed) return;
+                    Dispatcher.Invoke(() =>
                     {
-                        BorderBrush = Brushes.Black,
-                        BorderThickness = new Thickness(1),
-                        Padding = new Thickness(1)
-                    };
-                    cell.Blocks.Add(new Paragraph
-                    {
-                        Inlines =
-                        {
-                            new SelectableText
-                            {
-                                Text = en.GetRecord()?.GetValue(j).ToString() ?? "<null>",
-                                TextWrapping = TextWrapping.NoWrap,
-                                TextAlignment = TextAlignment.Center
-                            }
-                        }
+                        view.TerminalLogs.Add(groupBox);
+                        view.TerminalLogs.Add(rowCountTextBlock);
                     });
-                    j++;
-                    row.Cells.Add(cell);
-                }
+                    try
+                    {
+                        for (var i = 0; reader.Read(); i++)
+                        {
+                            if (!server.Busy) break;
+                            if (i > 200)
+                            {
+                                Dispatcher.Invoke(() => view.TerminalLogs.Add("Table exceeded 200 rows!"));
+                                break;
+                            }
 
-                table.RowGroups[0].Rows.Add(row);
+                            for (var j = 0; j < reader.FieldCount; j++)
+                            {
+                                if (!server.Busy) break;
+                                if (i == 0)
+                                    CreateSqlTableColumn(reader, i, j, grid, groupBox, rowCountTextBlock, false);
+                                CreateSqlTableColumn(reader, i, j, grid, groupBox, rowCountTextBlock);
+                            }
+                            if (i % 1 == 0)
+                                Thread.Sleep(5);
+                        }
+                        if (!server.Busy)
+                            Dispatcher.Invoke(() => view.TerminalLogs.Add("The process has been interrupted, not continuing anymore..."));
+                    }
+                    catch (Exception ex)
+                    {
+                        server.HandleException(ex);
+                    }
+                    break;
+                }
             }
-            view.TerminalLogs.Add(new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = GridLength.Auto },
-                    new ColumnDefinition { Width = new GridLength(0, GridUnitType.Star) }
-                },
-                Children = { reader }
-            });
-            closeAction?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            closeAction?.Invoke();
-            ServerInstance.HandleException(ex);
-        }
+        }, true);
     }
 }
