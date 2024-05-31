@@ -65,7 +65,8 @@ public class AdditionalDataPanel : StackPanel
                 input.TextChanged += (_, _) =>
                 {
                     if (ServerInstance.EditMode)
-                        input.Tag = input.Text;
+                        // input.Tag = input.Text;
+                        data.Value = input.Text;
                     else
                         data.Value = input.Text;
                 };
