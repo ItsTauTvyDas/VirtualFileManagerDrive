@@ -14,7 +14,7 @@ public static class ApplicationSettings
 
     public static readonly Dictionary<ConnectionStrength, int> ConnectionStrengthTypes = new();
 
-    public static ConnectionStrength GetConnectionStrengthIconIndex(uint ping)
+    public static ConnectionStrength GetConnectionStrengthIconIndex(long ping)
     {
         for (var i = ConnectionStrength.Poor; i <= ConnectionStrength.Excellent; i++)
         {
