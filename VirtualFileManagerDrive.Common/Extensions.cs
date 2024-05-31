@@ -12,8 +12,13 @@ public static class Extensions
         return defaultValue;
     }
 
-    public static void Add<TK, TV>(this Dictionary<TK, TV?> dictionary, TK key, TV? value) where TK : notnull
+    public static void AddToList<TK, TV>(this Dictionary<TK, IList<TV>> dictionary, TK key, TV value) where TK : notnull
     {
-        dictionary.Add(key, value);
+        if (dictionary.TryGetValue(key, out var list))
+        {
+            list.Add(value);
+            return;
+        }
+        dictionary.Add(key, new List<TV> { value });
     }
 }
