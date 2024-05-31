@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Markup;
 using System.Windows.Media;
+using UI.Helper;
 
 namespace UI.Converters;
 
@@ -16,7 +17,7 @@ public class WindowsIconConverter : MarkupExtension, IValueConverter
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var icon = Windows.GetIcon(File, value is int v ? v : Index, Large, Rotate);
+        var icon = WindowsApi.GetIcon(File, value is int v ? v : Index, Large, Rotate);
         return ConvertToImage ? new Image { Source = (ImageSource)icon!} : icon;
     }
 
