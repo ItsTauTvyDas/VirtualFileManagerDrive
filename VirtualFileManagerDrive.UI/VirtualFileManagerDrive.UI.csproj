@@ -8,6 +8,7 @@
         <UseWPF>true</UseWPF>
         <LangVersion>12</LangVersion>
         <RootNamespace>UI</RootNamespace>
+        <AssemblyName>VirtualFileManagerDrive</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
