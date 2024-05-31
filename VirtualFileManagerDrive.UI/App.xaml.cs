@@ -7,15 +7,17 @@ namespace UI;
 
 public partial class App
 {
-    private static void ExceptionHandler(object? sender, FirstChanceExceptionEventArgs args)
+    private static void ExceptionHandler(object? sender, UnhandledExceptionEventArgs args)
     {
+        var exception = (Exception) args.ExceptionObject;
         if (MessageBox.Show(
-                args.Exception+"\n\nDo you want to copy the exception?",
-                "An exception occurred!",
+                (Debugger.IsAttached ? exception.ToString() : exception.Message) +
+                $"\n\nDo you want to copy the {(Debugger.IsAttached ? "exception" : "error")}?",
+                "An error occurred!",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Error
             ) == MessageBoxResult.Yes)
-            Clipboard.SetText(args.Exception.ToString());
+            Clipboard.SetText(Debugger.IsAttached ? exception.ToString() : exception.Message);
     }
     
     public App()
@@ -23,7 +25,7 @@ public partial class App
         ServerInstance.ExceptionHandler += ExceptionHandler;
 
         if (!Debugger.IsAttached)
-            AppDomain.CurrentDomain.FirstChanceException += ExceptionHandler;
+            AppDomain.CurrentDomain.UnhandledException += ExceptionHandler;
         ApplicationSettings.Load();
     }
 }
