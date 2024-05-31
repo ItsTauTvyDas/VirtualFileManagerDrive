@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using UI.Helper;
 
 namespace UI.Controls;
 
@@ -61,7 +62,7 @@ public class WindowsIcon : Image
             new PropertyMetadata(default(int), (obj, args) =>
             {
                 var control = (WindowsIcon)obj;
-                control.Source = (BitmapSource?)Windows.GetIcon(control.File, (int)args.NewValue, control.Large,
+                control.Source = (BitmapSource?)WindowsApi.GetIcon(control.File, (int)args.NewValue, control.Large,
                     control.Rotation);
             })
     );
