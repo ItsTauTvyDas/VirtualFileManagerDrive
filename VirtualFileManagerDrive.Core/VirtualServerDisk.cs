@@ -11,69 +11,65 @@ public class VirtualServerDisk(ServerInstance server) : IDokanOperations
     public NtStatus CreateFile(string fileName, FileAccess access, FileShare share, FileMode mode, FileOptions options,
         FileAttributes attributes, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Success;
     }
 
-    public NtStatus HandleExitCode(int code)
-    {
-        return code switch
-        {
-            0 => NtStatus.Success,
-            1 => NtStatus.Error,
-            2 => NtStatus.AccessDenied,
-            126 => NtStatus.AccessDenied,
-            127 => NtStatus.ObjectNameNotFound,
-            _ => NtStatus.Unsuccessful
-        };
-    }
+    public void Cleanup(string fileName, IDokanFileInfo info) { }
 
-    public void Cleanup(string fileName, IDokanFileInfo info)
-    {
-    }
-
-    public void CloseFile(string fileName, IDokanFileInfo info)
-    {
-    }
+    public void CloseFile(string fileName, IDokanFileInfo info) { }
 
     public NtStatus ReadFile(string fileName, byte[] buffer, out int bytesRead, long offset, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        bytesRead = 0;
+        return NtStatus.Success;
     }
 
     public NtStatus WriteFile(string fileName, byte[] buffer, out int bytesWritten, long offset, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        bytesWritten = 0;
+        return NtStatus.Error;
     }
 
     public NtStatus FlushFileBuffers(string fileName, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Error;
     }
 
     public NtStatus GetFileInformation(string fileName, out FileInformation fileInfo, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        fileInfo = new FileInformation { FileName = fileName };
+        if (fileName == "\\")
+        {
+            fileInfo.Attributes = FileAttributes.Directory;
+            fileInfo.LastAccessTime = DateTime.Now;
+            fileInfo.LastWriteTime = null;
+            fileInfo.CreationTime = null;
+            return DokanResult.Success;
+        }
+        return NtStatus.Success;
     }
 
     public NtStatus FindFiles(string fileName, out IList<FileInformation> files, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        files = server.GetFiles(fileName);
+        return NtStatus.Success;
     }
 
     public NtStatus FindFilesWithPattern(string fileName, string searchPattern, out IList<FileInformation> files, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        files = [];
+        return NtStatus.NotImplemented;
     }
 
     public NtStatus SetFileAttributes(string fileName, FileAttributes attributes, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.NotImplemented;
     }
 
     public NtStatus SetFileTime(string fileName, DateTime? creationTime, DateTime? lastAccessTime, DateTime? lastWriteTime,
         IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Error;
     }
 
     public NtStatus DeleteFile(string fileName, IDokanFileInfo info)
@@ -81,7 +77,7 @@ public class VirtualServerDisk(ServerInstance server) : IDokanOperations
         return Server.DeleteFile(info.IsDirectory, fileName) switch
         {
             true => NtStatus.Success,
-            false => NtStatus.ObjectNoLongerExists,
+            false => NtStatus.ObjectNameCollision,
             null => NtStatus.AccessDenied
         };
     }
@@ -90,65 +86,75 @@ public class VirtualServerDisk(ServerInstance server) : IDokanOperations
 
     public NtStatus MoveFile(string oldName, string newName, bool replace, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.NotImplemented;
     }
 
     public NtStatus SetEndOfFile(string fileName, long length, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Error;
     }
 
     public NtStatus SetAllocationSize(string fileName, long length, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Error;
     }
 
     public NtStatus LockFile(string fileName, long offset, long length, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Success;
     }
 
     public NtStatus UnlockFile(string fileName, long offset, long length, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Success;;
     }
 
     public NtStatus GetDiskFreeSpace(out long freeBytesAvailable, out long totalNumberOfBytes, out long totalNumberOfFreeBytes,
         IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        freeBytesAvailable = 0;
+        totalNumberOfBytes = 0;
+        totalNumberOfFreeBytes = 0;
+        return NtStatus.Success;
     }
 
     public NtStatus GetVolumeInformation(out string volumeLabel, out FileSystemFeatures features, out string fileSystemName,
         out uint maximumComponentLength, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        volumeLabel = server.DriveName;
+        fileSystemName = server.FileSystemName;
+        maximumComponentLength = 256;
+        features = FileSystemFeatures.UnicodeOnDisk;
+        return NtStatus.Success;
     }
 
-    public NtStatus GetFileSecurity(string fileName, out FileSystemSecurity security, AccessControlSections sections,
+    public NtStatus GetFileSecurity(string fileName, out FileSystemSecurity? security, AccessControlSections sections,
         IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        security = null;
+        return NtStatus.Error;
     }
 
     public NtStatus SetFileSecurity(string fileName, FileSystemSecurity security, AccessControlSections sections,
         IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Error;
     }
 
     public NtStatus Mounted(string mountPoint, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        server.DriveMountHandler(server, EventArgs.Empty);
+        return NtStatus.Success;
     }
 
     public NtStatus Unmounted(IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        return NtStatus.Success;
     }
 
     public NtStatus FindStreams(string fileName, out IList<FileInformation> streams, IDokanFileInfo info)
     {
-        throw new NotImplementedException();
+        streams = [];
+        return NtStatus.NotImplemented;
     }
 }
