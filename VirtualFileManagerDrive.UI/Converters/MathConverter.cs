@@ -7,7 +7,7 @@ namespace UI.Converters;
 public class MathConverter : MarkupExtension, IValueConverter
 {
     public string? Operator { get; set; }
-    public double? Argument { get; set; }
+    public double? Number { get; set; }
     public bool Opposite { get; set; } = false;
     public bool Round { get; set; } = false;
     public string CastTo { get; set; } = "double";
@@ -19,10 +19,10 @@ public class MathConverter : MarkupExtension, IValueConverter
             throw new ArgumentNullException(nameof(value), "Number cannot be null.");
         var res = Operator switch
         {
-            "+" => number + Argument,
-            "-" => Opposite ? Argument - number : number - Argument,
-            "*" => number * Argument,
-            "/" => Opposite ? Argument / number : number / Argument,
+            "+" => number + Number,
+            "-" => Opposite ? Number - number : number - Number,
+            "*" => number * Number,
+            "/" => Opposite ? Number / number : number / Number,
             _ => throw new ArgumentOutOfRangeException()
         };
         if (Round && res != null)
