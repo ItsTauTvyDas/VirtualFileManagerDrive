@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using UI.ViewModels;
+using VirtualFileManagerDrive.Core;
 
 namespace UI.Extensions;
 
@@ -21,4 +23,7 @@ public static class ObjectExtensions
                 yield return nestedChild;
         }
     }
+
+    public static void UpdateView(this ServerInstance server) => ((ServerInstanceViewModel?)server.View)?.Update();
+    public static ServerInstanceViewModel GetView(this ServerInstance server) => (ServerInstanceViewModel?)server.View!;
 }
