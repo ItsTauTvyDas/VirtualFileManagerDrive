@@ -3,11 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:virtualDrive="clr-namespace:VirtualFileManagerDrive.Core;assembly=VirtualFileManagerDrive.Core"
         xmlns:view="clr-namespace:UI.ViewModels"
         xmlns:conv="clr-namespace:UI.Converters"
         xmlns:control="clr-namespace:UI.Controls"
+        xmlns:core="clr-namespace:VirtualFileManagerDrive.Core;assembly=Core"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:helper="clr-namespace:UI.Helper"
         mc:Ignorable="d"
         Title="Virtual File Manager Drive (v1.0.0)"
         Height="600" Width="700"
@@ -15,7 +16,7 @@
         MouseDown="MainWindow_OnMouseDown"
         KeyDown="MainWindow_OnKeyDown"
         Name="CurrentWindow"
-        Icon="{Binding Converter={conv:WindowsIconConverter Index=42, ConvertToImage=False}}"
+        Icon="{Binding Converter={conv:WindowsIconConverter Icon=FolderWithComputer, ConvertToImage=False}}"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <Style TargetType="{x:Type Button}">
@@ -34,6 +35,7 @@
                     <Style.Resources>
                         <Style TargetType="{x:Type control:SelectableText}">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Foreground" Value="DimGray"/>
                         </Style>
                     </Style.Resources>
                 </Style>
@@ -73,38 +75,103 @@
                 <control:AdditionalDataPanel ReadOnly="True"
                                              Data="{Binding AdditionalData}"
                                              Grid.Row="1"/>
-                <GroupBox Grid.Row="2" Header="Volume Information">
+                <GroupBox Grid.Row="2" Header="Drive Information">
                     <StackPanel>
                         <DockPanel>
                             <TextBlock>Name</TextBlock>
-                            <control:SelectableText Text="{Binding VolumeName, Mode=OneWay}"/>
+                            <control:SelectableText Text="{Binding DriveName, Mode=OneWay}"/>
                         </DockPanel>
                         <DockPanel>
                             <TextBlock>Letter</TextBlock>
-                            <control:SelectableText Text="{Binding VolumeLetter, Mode=OneWay, Converter={StaticResource FormatConverter}, ConverterParameter=[]:/}"/>
+                            <control:SelectableText Text="{Binding DriveLetter, Mode=OneWay, StringFormat={}{0}:/}"/>
                         </DockPanel>
                     </StackPanel>
                 </GroupBox>
-                <Grid Grid.Row="3">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition MinWidth="150" Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition MinWidth="150" Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <GroupBox Header="Logs" Grid.Column="0">
-                        <ListBox BorderThickness="0">
-                            
-                        </ListBox>
-                    </GroupBox>
-                    <GridSplitter Grid.Column="1"
-                                  Width="3"
-                                  Background="Transparent"
-                                  VerticalAlignment="Stretch" 
-                                  HorizontalAlignment="Center" />
-                    <GroupBox Header="Log Information" Grid.Column="2">
-                        
-                    </GroupBox>
-                </Grid>
+                <TabControl Grid.Row="3">
+                    <TabItem Header="Logs">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition MinWidth="150" Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition MinWidth="150" Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ListBox ItemsSource="{Binding Logs, Mode=OneWay}" x:Name="LogListBox" Grid.Column="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type system:Exception}">
+                                        <TextBlock Text="{Binding Message}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <GridSplitter Grid.Column="1"
+                                          Width="3"
+                                          Background="Transparent"
+                                          VerticalAlignment="Stretch" 
+                                          HorizontalAlignment="Center" />
+                            <Border BorderBrush="{Binding BorderBrush, ElementName=LogListBox, Mode=OneTime}"
+                                    BorderThickness="1" Grid.Column="2" Padding="1">
+                                <ContentControl Content="{Binding SelectedItem, ElementName=LogListBox, Mode=TwoWay}">
+                                    <ContentControl.Resources>
+                                        <Style TargetType="{x:Type ContentControl}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedIndex, ElementName=LogListBox}" Value="-1">
+                                                    <Setter Property="Visibility" Value="Hidden"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ContentControl.Resources>
+                                    <ContentControl.ContentTemplate>
+                                        <DataTemplate DataType="{x:Type system:Exception}">
+                                            <ScrollViewer>
+                                                <StackPanel Margin="2">
+                                                    <StackPanel.Resources>
+                                                        <Style TargetType="{x:Type control:SelectableText}">
+                                                            <Setter Property="Margin" Value="5 0 0 10"/>
+                                                            <Setter Property="HorizontalAlignment" Value="Left"/>
+                                                        </Style>
+                                                    </StackPanel.Resources>
+                                                    <TextBlock Text="Source"/>
+                                                    <control:SelectableText Text="{Binding Source, Mode=OneTime, TargetNullValue='None'}"/>
+                                                    <TextBlock Text="Message"/>
+                                                    <control:SelectableText Text="{Binding Message, Mode=OneTime}"/>
+                                                    <TextBlock Text="Help Link"/>
+                                                    <control:SelectableText Text="{Binding HelpLink, Mode=OneTime, TargetNullValue='None'}"/>
+                                                    <TextBlock Text="HResult"/>
+                                                    <control:SelectableText Text="{Binding HResult, Mode=OneTime}"/>
+                                                    <TextBlock Text="Stack Trace"/>
+                                                    <control:SelectableText Text="{Binding StackTrace, Mode=OneTime, TargetNullValue='None'}"/>
+                                                </StackPanel>
+                                            </ScrollViewer>
+                                        </DataTemplate>
+                                    </ContentControl.ContentTemplate>
+                                </ContentControl>
+                            </Border>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Terminal" IsEnabled="{Binding IsExecutable}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="23"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0"
+                                    Padding="1"
+                                    BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                    BorderThickness="1">
+                                <ScrollViewer VerticalScrollBarVisibility="Visible"
+                                              HorizontalScrollBarVisibility="Visible"
+                                              helper:AutoScrollBehavior.AutoScroll="True"
+                                              Padding="3">
+                                    <ItemsControl ItemsSource="{Binding TerminalLogs}"/>
+                                </ScrollViewer>
+                            </Border>
+                            <Grid Grid.Row="1" Margin="0 3 0 0">
+                                <TextBlock Padding="5 1 0 0" Text=">" HorizontalAlignment="Left" Width="15"/>
+                                <TextBox Padding="15 1 0 0" Background="Transparent"
+                                         KeyDown="TerminalTextBox_OnKeyDown"/>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
                 <GroupBox Grid.Row="4" Header="Controls">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -113,13 +180,13 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Button Content="Execute..." Grid.Column="0"
-                                IsEnabled="{Binding IsSecureShellBased}"
-                                Click="EditServerButton_OnClick"/>
+                        <Button Content="Execute" Grid.Column="0"
+                                IsEnabled="{Binding IsConnected}"
+                                Click="ExecuteButton_OnClick"/>
                         <Button Content="{Binding IsConnected, Converter={conv:ConditionalBoolConverter TrueValue=Disconnect, FalseValue=Connect}}" Grid.Column="1"
-                                Click="EditServerButton_OnClick"/>
+                                Click="ConnectButton_OnClick"/>
                         <Button Content="{Binding IsMounted, Converter={conv:ConditionalBoolConverter TrueValue=Unmount, FalseValue=Mount}}" Grid.Column="2"
-                                Click="EditServerButton_OnClick"/>
+                                Click="MountButton_OnClick"/>
                         <Button Content="Edit" Grid.Column="3"
                                 Click="EditServerButton_OnClick"/>
                     </Grid>
@@ -130,29 +197,29 @@
             <StackPanel Margin="0 1">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <control:WindowsIcon Grid.Column="0"
-                                         Margin="0 0 5 0"
-                                         Index="79"/>
-                    <TextBlock Grid.Column="1"
-                               Foreground="{Binding IsConnected, Converter={conv:ConditionalBoolConverter TrueValue=Green, FalseValue=Black}, Mode=OneWay}"
-                               Text="{Binding ServerName}"/>
-                    <Grid Grid.Column="2" ToolTip="{Binding ConnectionToolTip}">
-                        <control:WindowsIcon Index="{Binding ConnectionIconIndex, Mode=OneTime}" File="netcenter.dll"/>
-                        <control:WindowsIcon Index="4" File="aclui.dll" IsCorneredIcon="True">
-                            <control:WindowsIcon.Style>
-                                <Style TargetType="{x:Type control:WindowsIcon}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </control:WindowsIcon.Style>
-                        </control:WindowsIcon>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock MaxWidth="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=ListBox}, Converter={conv:MathConverter Operator=-, Number=45}}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ServerName}"/>
+                        <TextBlock Text="{Binding ConnectionStatus, Mode=OneWay}"
+                                   Foreground="{Binding ConnectionStatusColor, Mode=OneWay}"/>
+                    </StackPanel>
+                    <Grid Grid.Column="1" ToolTip="{Binding ConnectionToolTip}">
+                        <control:WindowsIcon Icon="{Binding Icon}" Large="True"/>
+                        <!-- <control:WindowsIcon Index="4" File="aclui.dll" IsCorneredIcon="True"> -->
+                        <!--     <control:WindowsIcon.Style> -->
+                        <!--         <Style TargetType="{x:Type control:WindowsIcon}"> -->
+                        <!--             <Style.Triggers> -->
+                        <!--                 <DataTrigger Binding="{Binding IsConnected}" Value="True"> -->
+                        <!--                     <Setter Property="Visibility" Value="Collapsed"/> -->
+                        <!--                 </DataTrigger> -->
+                        <!--             </Style.Triggers> -->
+                        <!--         </Style> -->
+                        <!--     </control:WindowsIcon.Style> -->
+                        <!-- </control:WindowsIcon> -->
                     </Grid>
                 </Grid>
             </StackPanel>
@@ -160,7 +227,7 @@
     </Window.Resources>
     <Grid x:Name="RootElement" Focusable="True">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" MinWidth="150" MaxWidth="{Binding ActualWidth, ElementName=CurrentWindow, Converter={conv:MathConverter Operator=/, Argument=2}}"/>
+            <ColumnDefinition Width="200" MinWidth="150" MaxWidth="{Binding ActualWidth, ElementName=CurrentWindow, Converter={conv:MathConverter Operator=/, Number=2}}"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
@@ -172,7 +239,7 @@
             <GroupBox Grid.Row="0" Margin="2" Header="Select Server">
                 <ListBox x:Name="ServerList" BorderThickness="0"
                          SelectionChanged="ServerList_OnSelectionChanged"
-                         ItemsSource="{x:Static virtualDrive:ServerInstance.SavedServers}">
+                         ItemsSource="{x:Static core:ServerInstance.SavedServers}">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -194,12 +261,12 @@
                                             <MenuItem.Style>
                                                 <Style TargetType="{x:Type MenuItem}">
                                                     <Style.Triggers>
-                                                        <Trigger Property="Header" Value="Mount">
-                                                            <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=149}}"/>
-                                                        </Trigger>
-                                                        <Trigger Property="Header" Value="Unmount">
-                                                            <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=10}}"/>
-                                                        </Trigger>
+                                                        <!-- <Trigger Property="Header" Value="Mount"> -->
+                                                        <!--     <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=149}}"/> -->
+                                                        <!-- </Trigger> -->
+                                                        <!-- <Trigger Property="Header" Value="Unmount"> -->
+                                                        <!--     <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=10}}"/> -->
+                                                        <!-- </Trigger> -->
                                                     </Style.Triggers>
                                                 </Style>
                                             </MenuItem.Style>
@@ -209,32 +276,32 @@
                                             <MenuItem.Style>
                                                 <Style TargetType="{x:Type MenuItem}">
                                                     <Style.Triggers>
-                                                        <Trigger Property="Header" Value="Connect">
-                                                            <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=300}}"/>
-                                                        </Trigger>
-                                                        <Trigger Property="Header" Value="Disconnect">
-                                                            <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=027}}"/>
-                                                        </Trigger>
+                                                        <!-- <Trigger Property="Header" Value="Connect"> -->
+                                                        <!--     <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=300}}"/> -->
+                                                        <!-- </Trigger> -->
+                                                        <!-- <Trigger Property="Header" Value="Disconnect"> -->
+                                                        <!--     <Setter Property="Icon" Value="{Binding Converter={conv:WindowsIconConverter Index=027}}"/> -->
+                                                        <!-- </Trigger> -->
                                                     </Style.Triggers>
                                                 </Style>
                                             </MenuItem.Style>
                                         </MenuItem>
-                                        <MenuItem Tag="Open Folder"
-                                                  Icon="{Binding Converter={conv:WindowsIconConverter Index=155}}"
-                                                  Click="ContextMenuItem_OnClick"/>
-                                        <MenuItem Tag="Open Terminal"
-                                                  Icon="{Binding Converter={conv:WindowsIconConverter File=cmd.exe, Index=0}}"
-                                                  Click="ContextMenuItem_OnClick"/>
-                                        <MenuItem Tag="Move Up"
-                                                  Icon="{Binding Converter={conv:WindowsIconConverter Index=308}}"
-                                                  Click="ContextMenuItem_OnClick"/>
-                                        <MenuItem Tag="Move Down"
-                                                  Icon="{Binding Converter={conv:WindowsIconConverter Index=308, Rotate=180}}"
-                                                  Click="ContextMenuItem_OnClick"/>
-                                        <MenuItem Tag="Remove"
-                                                  Click="ContextMenuItem_OnClick"
-                                                  Icon="{Binding Converter={conv:WindowsIconConverter Index=131}}"
-                                                  Foreground="Red"/>
+                                        <!-- <MenuItem Tag="Open Folder" -->
+                                        <!--           Icon="{Binding Converter={conv:WindowsIconConverter Index=155}}" -->
+                                        <!--           Click="ContextMenuItem_OnClick"/> -->
+                                        <!-- <MenuItem Tag="Open Terminal" -->
+                                        <!--           Icon="{Binding Converter={conv:WindowsIconConverter File=cmd.exe, Index=0}}" -->
+                                        <!--           Click="ContextMenuItem_OnClick"/> -->
+                                        <!-- <MenuItem Tag="Move Up" -->
+                                        <!--           Icon="{Binding Converter={conv:WindowsIconConverter Index=308}}" -->
+                                        <!--           Click="ContextMenuItem_OnClick"/> -->
+                                        <!-- <MenuItem Tag="Move Down" -->
+                                        <!--           Icon="{Binding Converter={conv:WindowsIconConverter Index=308, Rotate=180}}" -->
+                                        <!--           Click="ContextMenuItem_OnClick"/> -->
+                                        <!-- <MenuItem Tag="Remove" -->
+                                        <!--           Click="ContextMenuItem_OnClick" -->
+                                        <!--           Icon="{Binding Converter={conv:WindowsIconConverter Index=131}}" -->
+                                        <!--           Foreground="Red"/> -->
                                     </ContextMenu>
                                 </ContentPresenter.ContextMenu>
                             </ContentPresenter>
@@ -269,16 +336,15 @@
                         </Grid.ColumnDefinitions>
                         <control:WindowsIcon Grid.Column="0"
                                              Margin=" 5 0"
-                                             File="netshell.dll"
-                                             Index="93"
-                                             Large="True"/>
+                                             Large="True"
+                                             Icon="Warning"/>
                         <control:SelectableText Foreground="Red" Grid.Column="1">
                             We couldn't find Dokany on your system or it's not installed! After installing it, restart the application.
                         </control:SelectableText>
                         <Button VerticalAlignment="Bottom" Grid.Column="2" Click="InstallDokany_OnClick">
                             <DockPanel VerticalAlignment="Center">
                                 <control:WindowsIcon Margin=" 0 2 5 0"
-                                                     Index="261"/>
+                                                     Icon="Application"/>
                                 <TextBlock>Install...</TextBlock>
                             </DockPanel>
                         </Button>
